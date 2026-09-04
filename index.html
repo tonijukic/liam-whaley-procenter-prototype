@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Liam Whaley Pro Center — Manager Portal (Prototype)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/brand.css" />
+  <script src="assets/data.js"></script>
+  <script src="assets/app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+<body x-data="portal()" x-cloak>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brandbar">
+      <img class="logo" src="https://www.liamwhaleyprocenter.com/images/liam-whaley-pro-center-logo-black.svg" alt="Liam Whaley Pro Center" onerror="this.style.display='none'" />
+      <div class="sub">MANAGER PORTAL</div>
+    </div>
+    <nav class="nav">
+      <a :class="{active: view==='dashboard'}" @click="view='dashboard'"><span class="ico">📊</span> Dashboard</a>
+      <a :class="{active: view==='schedule'}" @click="view='schedule'"><span class="ico">🗓️</span> Schedule</a>
+      <a :class="{active: view==='water'}" @click="view='water'"><span class="ico">🌊</span> On the Water
+        <span class="grow"></span>
+        <span class="badge cyan" x-show="onWater.length" x-text="onWater.length"></span>
+      </a>
+      <a :class="{active: view==='clients'}" @click="view='clients'"><span class="ico">👥</span> Clients</a>
+      <a :class="{active: view==='staff'}" @click="view='staff'"><span class="ico">🧑‍🏫</span> Staff</a>
+      <a :class="{active: view==='inventory'}" @click="view='inventory'"><span class="ico">📦</span> Inventory</a>
+      <a :class="{active: view==='reports'}" @click="view='reports'"><span class="ico">📈</span> Reports</a>
+      <div style="height:12px"></div>
+      <a href="booking.html" target="_blank"><span class="ico">🔗</span> Public booking page ↗</a>
+    </nav>
+    <div class="foot">
+      Prototype · demo data only<br>
+      <a style="color:var(--cyan);cursor:pointer;padding:0" @click="resetDemo()">↺ Reset demo data</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <h1 x-text="{dashboard:'Dashboard',schedule:'Schedule',water:'On the Water',clients:'Clients',staff:'Staff & Instructors',inventory:'Equipment Inventory',reports:'Reports'}[view]"></h1>
+      <div class="grow"></div>
+      <div class="wind">
+        <div><span class="dot" :class="db.conditions.dir_safe?'ok':'bad'"></span> <b x-text="db.conditions.wind_kt"></b> kt <span class="muted" x-text="'· '+db.conditions.dir"></span></div>
+        <div class="muted small" x-text="'gust '+db.conditions.gust_kt+' · tide '+db.conditions.tide+' · '+db.conditions.water_c+'°C'"></div>
+      </div>
+      <div class="chip" x-text="'Demo time '+now"></div>
+    </div>
+
+    <div class="content">
+
+    <!-- ============ DASHBOARD ============ -->
+    <section x-show="view==='dashboard'">
+      <div class="banner">⚡ This is a clickable prototype with sample data. Check-in/out and inventory edits are saved in your browser — click <b>Reset demo data</b> anytime.</div>
+      <div class="grid cols-4">
+        <div class="card kpi"><div class="accent" style="background:var(--cyan)"></div><div class="label">On the water now</div><div class="val cyan" x-text="onWater.length"></div><div class="sub" x-text="overdueCount? overdueCount+' overdue ⚠️' : 'all within ETA'"></div></div>
+        <div class="card kpi"><div class="accent" style="background:var(--orange)"></div><div class="label">Sessions today</div><div class="val" x-text="todaySessions.length"></div><div class="sub" x-text="scheduledToday.length+' upcoming · '+returnedToday.length+' done'"></div></div>
+        <div class="card kpi"><div class="accent" style="background:var(--teal)"></div><div class="label">Gear available</div><div class="val" x-text="availableCount"></div><div class="sub" x-text="rentedCount+' out · '+maintCount+' in service'"></div></div>
+        <div class="card kpi"><div class="accent" style="background:var(--coral)"></div><div class="label">Utilization (wk)</div><div class="val" x-text="db.reports.utilization_pct+'%'"></div><div class="sub">target 65–75%</div></div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:16px">
+        <div class="card">
+          <div class="hd">🌊 On the water now</div>
+          <div class="bd">
+            <template x-if="!onWater.length"><div class="muted small">Nobody on the water right now.</div></template>
+            <template x-for="s in onWater" :key="s.id">
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1f2f4">
+                <span class="avatar" :style="'background:'+(staffById(s.instructor)?.color||'#64748b')" x-text="initials(clientById(s.client).name)"></span>
+                <div style="flex:1">
+                  <div style="font-weight:600" x-text="clientById(s.client).name"></div>
+                  <div class="muted small" x-text="(staffById(s.instructor)? staffById(s.instructor).name : 'Rental') + ' · ' + gearLabels(s.gear).join(', ')"></div>
+                </div>
+                <div class="right small"><div :class="isOverdue(s)?'overdue':'muted'" x-text="'ETA '+s.eta"></div><span class="badge" :class="isOverdue(s)?'red':'cyan'" x-text="isOverdue(s)?'overdue':'out '+s.out_at"></span></div>
+              </div>
+            </template>
+          </div>
+        </div>
+        <div class="card">
+          <div class="hd">📦 Gear in storage</div>
+          <div class="bd">
+            <template x-for="g in gearSummary" :key="g.cat">
+              <div class="bar-row"><div class="name" x-text="g.cat"></div><div class="bar-track"><div class="bar-fill" :style="'width:'+(g.avail/g.total*100)+'%'"></div></div><div class="pct" x-text="g.avail+'/'+g.total"></div></div>
+            </template>
+            <div class="muted small" style="margin-top:10px">Available / total. Live figure also shown on the public booking page.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="hd">🗓️ Today's sessions</div>
+        <div class="bd" style="padding:0">
+          <table>
+            <thead><tr><th>Time</th><th>Type</th><th>Client</th><th>Instructor</th><th>Equipment</th><th>Status</th></tr></thead>
+            <tbody>
+              <template x-for="s in todaySessions" :key="s.id">
+                <tr>
+                  <td style="white-space:nowrap" x-text="s.start+'–'+s.end"></td>
+                  <td><span class="badge" :class="s.kind==='Lesson'?'blue':'gray'" x-text="s.kind"></span> <span class="chip" x-text="s.discipline"></span></td>
+                  <td x-text="clientById(s.client).name"></td>
+                  <td x-text="staffById(s.instructor)? staffById(s.instructor).name : '—'"></td>
+                  <td class="small muted" x-text="gearLabels(s.gear).join(', ')"></td>
+                  <td><span class="badge" :class="{on_water:'cyan',scheduled:'gray',returned:'green',cancelled:'red'}[s.status]" x-text="s.status.replace('_',' ')"></span></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SCHEDULE ============ -->
+    <section x-show="view==='schedule'">
+      <p class="view-title">Instructor timeline · today</p>
+      <div class="card"><div class="bd sched">
+        <table>
+          <thead><tr><th style="width:150px">Instructor</th><template x-for="h in [9,10,11,12,13,14,15,16]" :key="h"><th x-text="h+':00'"></th></template></tr></thead>
+          <tbody>
+            <template x-for="inst in instructors" :key="inst.id">
+              <tr>
+                <td><div class="person"><span class="avatar" :style="'background:'+inst.color" x-text="initials(inst.name)"></span><div><div style="font-weight:600" x-text="inst.name"></div><div class="muted small" x-text="inst.role"></div></div></div></td>
+                <template x-for="h in [9,10,11,12,13,14,15,16]" :key="h">
+                  <td class="slot">
+                    <template x-for="s in db.sessions.filter(x=>x.instructor===inst.id && parseInt(x.start)===h)" :key="s.id">
+                      <div class="block" :style="'background:'+inst.color+'33;border-left:3px solid '+inst.color">
+                        <div class="who" x-text="clientById(s.client).name"></div>
+                        <div class="gear" x-text="s.discipline+' · '+s.start+'–'+s.end"></div>
+                        <div class="gear" x-text="gearLabels(s.gear).slice(0,2).join(', ')"></div>
+                      </div>
+                    </template>
+                  </td>
+                </template>
+              </tr>
+            </template>
+            <!-- rentals without instructor -->
+            <tr>
+              <td><div class="person"><span class="avatar" style="background:#94a3b8">R</span><div><div style="font-weight:600">Rentals</div><div class="muted small">no instructor</div></div></div></td>
+              <template x-for="h in [9,10,11,12,13,14,15,16]" :key="h">
+                <td class="slot">
+                  <template x-for="s in db.sessions.filter(x=>!x.instructor && parseInt(x.start)===h)" :key="s.id">
+                    <div class="block" style="background:#e2e8f0;border-left:3px solid #94a3b8">
+                      <div class="who" x-text="clientById(s.client).name"></div>
+                      <div class="gear" x-text="s.start+'–'+s.end"></div>
+                      <div class="gear" x-text="gearLabels(s.gear).join(', ')"></div>
+                    </div>
+                  </template>
+                </td>
+              </template>
+            </tr>
+          </tbody>
+        </table>
+      </div></div>
+      <p class="muted small" style="margin-top:12px">Each block ties an instructor, a client and specific equipment together — the same links drive the "On the Water" check-in/out and lock the gear in inventory.</p>
+    </section>
+
+    <!-- ============ ON THE WATER ============ -->
+    <section x-show="view==='water'">
+      <div class="card" style="margin-bottom:16px"><div class="bd">
+        <div class="water-count">
+          <div><div class="big cyan" style="color:var(--teal)" x-text="onWater.length"></div><div class="muted small">on the water</div></div>
+          <div><div class="big" x-text="returnedToday.length"></div><div class="muted small">returned today</div></div>
+          <div style="flex:1"></div>
+          <div class="reconcile" :class="overdueCount? 'warn':'ok'" x-text="overdueCount? ('⚠️ '+overdueCount+' overdue — check on them') : '✓ all within ETA'"></div>
+        </div>
+      </div></div>
+
+      <div class="grid cols-2">
+        <div class="card">
+          <div class="hd">🌊 Currently out</div>
+          <div class="bd" style="padding:0">
+            <table>
+              <thead><tr><th>Client</th><th>With</th><th>Out</th><th>ETA</th><th></th></tr></thead>
+              <tbody>
+                <template x-if="!onWater.length"><tr><td colspan="5" class="muted small" style="padding:16px">Nobody out right now.</td></tr></template>
+                <template x-for="s in onWater" :key="s.id">
+                  <tr :style="isOverdue(s)?'background:#fff5f6':''">
+                    <td><div style="font-weight:600" x-text="clientById(s.client).name"></div><div class="muted small" x-text="gearLabels(s.gear).join(', ')"></div></td>
+                    <td x-text="staffById(s.instructor)? staffById(s.instructor).name : 'Rental'"></td>
+                    <td x-text="s.out_at"></td>
+                    <td :class="isOverdue(s)?'overdue':''" x-text="s.eta"></td>
+                    <td class="right"><button class="btn sm primary" @click="checkIn(s)">✓ Check in</button></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="hd">⛱️ Ready to launch (scheduled)</div>
+          <div class="bd" style="padding:0">
+            <table>
+              <thead><tr><th>Time</th><th>Client</th><th>With</th><th></th></tr></thead>
+              <tbody>
+                <template x-if="!scheduledToday.length"><tr><td colspan="4" class="muted small" style="padding:16px">Nothing waiting.</td></tr></template>
+                <template x-for="s in scheduledToday" :key="s.id">
+                  <tr>
+                    <td x-text="s.start"></td>
+                    <td><div style="font-weight:600" x-text="clientById(s.client).name"></div><div class="muted small" x-text="gearLabels(s.gear).join(', ')"></div></td>
+                    <td x-text="staffById(s.instructor)? staffById(s.instructor).name : 'Rental'"></td>
+                    <td class="right"><button class="btn sm" @click="checkOut(s)">🌊 Check out</button></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px" x-show="returnedToday.length">
+        <div class="hd">✅ Returned today</div>
+        <div class="bd" style="padding:0"><table>
+          <thead><tr><th>Client</th><th>With</th><th>Out</th><th>In</th></tr></thead>
+          <tbody><template x-for="s in returnedToday" :key="s.id"><tr>
+            <td x-text="clientById(s.client).name"></td>
+            <td x-text="staffById(s.instructor)? staffById(s.instructor).name : 'Rental'"></td>
+            <td x-text="s.out_at"></td><td x-text="s.in_at"></td>
+          </tr></template></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- ============ CLIENTS ============ -->
+    <section x-show="view==='clients'">
+      <p class="view-title" x-text="db.clients.length+' clients'"></p>
+      <div class="card"><div class="bd" style="padding:0"><table>
+        <thead><tr><th>Name</th><th>Country</th><th>Discipline</th><th>Level</th><th>Waiver</th><th>Notes</th><th></th></tr></thead>
+        <tbody>
+          <template x-for="c in db.clients" :key="c.id">
+            <tr>
+              <td><div class="person"><span class="avatar" style="background:#2BABAD" x-text="initials(c.name)"></span><div><div style="font-weight:600" x-text="c.name"></div><div class="muted small" x-text="c.email"></div></div></div></td>
+              <td x-text="c.country"></td>
+              <td><span class="chip" x-text="c.discipline"></span></td>
+              <td><span class="badge" :class="levelBadge(c.level)" x-text="c.level"></span></td>
+              <td><span class="badge" :class="c.waiver?'green':'red'" x-text="c.waiver?'signed':'pending'"></span></td>
+              <td class="muted small" x-text="c.note"></td>
+              <td class="right"><button class="btn sm" @click="detail=c">View</button></td>
+            </tr>
+          </template>
+        </tbody>
+      </table></div></div>
+    </section>
+
+    <!-- ============ STAFF ============ -->
+    <section x-show="view==='staff'">
+      <p class="view-title">Instructors & supporting personnel</p>
+      <div class="grid cols-3">
+        <template x-for="s in db.staff" :key="s.id">
+          <div class="card"><div class="bd">
+            <div class="person" style="margin-bottom:10px"><span class="avatar" style="width:40px;height:40px;font-size:15px" :style="'background:'+s.color" x-text="initials(s.name)"></span><div><div style="font-weight:700" x-text="s.name"></div><div class="muted small" x-text="s.role"></div></div></div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px"><template x-for="l in s.langs" :key="l"><span class="chip" x-text="l"></span></template></div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px"><template x-for="c in s.certs" :key="c"><span class="badge cyan" x-text="c"></span></template><span x-show="!s.certs.length" class="muted small">support staff</span></div>
+            <div class="muted small" x-text="'Today: '+db.sessions.filter(x=>x.instructor===s.id).length+' session(s)'"></div>
+          </div></div>
+        </template>
+      </div>
+    </section>
+
+    <!-- ============ INVENTORY ============ -->
+    <section x-show="view==='inventory'">
+      <div class="grid cols-4" style="margin-bottom:16px">
+        <template x-for="g in gearSummary" :key="g.cat">
+          <div class="card" style="padding:12px 14px"><div class="muted small" style="font-weight:600" x-text="g.cat"></div><div style="font-size:20px;font-weight:800" x-text="g.avail+' / '+g.total"></div><div class="muted small">available</div></div>
+        </template>
+      </div>
+
+      <div class="toolbar">
+        <select x-model="invCat"><template x-for="c in invCategories" :key="c"><option x-text="c"></option></template></select>
+        <select x-model="invStatus"><option>All</option><option>available</option><option>rented</option><option>maintenance</option><option>decommissioned</option></select>
+        <input type="text" placeholder="Search id, brand, model…" x-model="invSearch" style="min-width:220px" />
+        <div class="grow"></div>
+        <button class="btn primary" @click="showAdd=true">+ Add equipment</button>
+      </div>
+
+      <div class="card"><div class="bd" style="padding:0"><table>
+        <thead><tr><th>ID</th><th>Category</th><th>Type</th><th>Size</th><th>Brand / model</th><th>Year</th><th>Condition</th><th>Status</th><th>Location</th><th>Actions</th></tr></thead>
+        <tbody>
+          <template x-for="i in filteredInventory" :key="i.id">
+            <tr :style="i.status==='decommissioned'?'opacity:.5':''">
+              <td style="font-weight:700;font-family:ui-monospace,monospace;font-size:12px" x-text="i.id"></td>
+              <td x-text="i.cat"></td>
+              <td class="small" x-text="i.type"></td>
+              <td style="font-weight:600" x-text="i.size"></td>
+              <td class="small" x-text="i.brand+' '+i.model"></td>
+              <td class="small muted" x-text="i.year"></td>
+              <td><span class="badge" :class="condBadge(i.cond)" x-text="i.cond"></span></td>
+              <td><span class="badge" :class="statusBadge(i.status)" x-text="i.status"></span></td>
+              <td class="small muted" x-text="i.loc"></td>
+              <td>
+                <select class="small" style="padding:4px 8px" @change="setStatus(i,$event.target.value)">
+                  <option value="available" :selected="i.status==='available'">available</option>
+                  <option value="rented" :selected="i.status==='rented'">rented</option>
+                  <option value="maintenance" :selected="i.status==='maintenance'">maintenance</option>
+                  <option value="decommissioned" :selected="i.status==='decommissioned'">decommission</option>
+                </select>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table></div></div>
+      <p class="muted small" style="margin-top:10px">Marking an item <b>maintenance</b> or <b>decommissioned</b> removes it from availability everywhere, including the public booking page. Add new gear as it's delivered with <b>+ Add equipment</b>.</p>
+    </section>
+
+    <!-- ============ REPORTS ============ -->
+    <section x-show="view==='reports'">
+      <div class="grid cols-4">
+        <div class="card kpi"><div class="label">Utilization</div><div class="val cyan" x-text="db.reports.utilization_pct+'%'"></div><div class="sub">fleet, this week</div></div>
+        <div class="card kpi"><div class="label">Revenue (wk)</div><div class="val" x-text="'€'+db.reports.revenue_week.toLocaleString()"></div><div class="sub">lessons + rentals</div></div>
+        <div class="card kpi"><div class="label">Lessons (wk)</div><div class="val" x-text="db.reports.lessons_week"></div></div>
+        <div class="card kpi"><div class="label">Rentals (wk)</div><div class="val" x-text="db.reports.rentals_week"></div></div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:16px">
+        <div class="card"><div class="hd">Utilization by category</div><div class="bd">
+          <template x-for="r in db.reports.util_by_cat" :key="r.cat"><div class="bar-row"><div class="name" x-text="r.cat"></div><div class="bar-track"><div class="bar-fill" :style="'width:'+r.pct+'%'"></div></div><div class="pct" x-text="r.pct+'%'"></div></div></template>
+        </div></div>
+        <div class="card"><div class="hd">Most-rented gear</div><div class="bd">
+          <template x-for="r in db.reports.top_gear" :key="r.item"><div class="bar-row"><div class="name" style="width:150px" x-text="r.item"></div><div class="bar-track"><div class="bar-fill" :style="'width:'+(r.rentals/maxTopGear*100)+'%'"></div></div><div class="pct" x-text="r.rentals"></div></div></template>
+        </div></div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:16px">
+        <div class="card"><div class="hd">Revenue by day</div><div class="bd">
+          <div class="colbars">
+            <template x-for="d in db.reports.revenue_by_day" :key="d.d"><div class="col"><div class="fill" :style="'height:'+(d.v/maxRevDay*140)+'px'"></div><div class="lbl" x-text="d.d"></div></div></template>
+          </div>
+        </div></div>
+        <div class="card"><div class="hd">Revenue by instructor</div><div class="bd">
+          <template x-for="r in db.reports.revenue_by_instructor" :key="r.name"><div class="bar-row"><div class="name" x-text="r.name"></div><div class="bar-track"><div class="bar-fill" :style="'width:'+(r.v/maxRevInst*100)+'%'"></div></div><div class="pct" x-text="'€'+r.v"></div></div></template>
+        </div></div>
+      </div>
+      <p class="muted small" style="margin-top:12px">Figures are illustrative. In the real build these are computed live from sessions, rentals and inventory.</p>
+    </section>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div>
+
+<!-- Add equipment modal -->
+<div class="overlay" x-show="showAdd" @click.self="showAdd=false" style="display:none" :style="showAdd?'display:flex':'display:none'">
+  <div class="modal">
+    <div class="hd">Add equipment to storage</div>
+    <div class="bd">
+      <label class="fld">Category
+        <select x-model="newItem.cat"><option>Kite</option><option>Bar</option><option>Board</option><option>Wing</option><option>Foil board</option><option>Foil</option><option>Harness</option><option>Wetsuit</option><option>Safety</option></select>
+      </label>
+      <div class="grid cols-2">
+        <label class="fld">Size <input x-model="newItem.size" placeholder="e.g. 9 m² / 142 cm / 130 L" /></label>
+        <label class="fld">Type <input x-model="newItem.type" placeholder="e.g. Freeride" /></label>
+      </div>
+      <div class="grid cols-2">
+        <label class="fld">Brand <input x-model="newItem.brand" placeholder="Duotone" /></label>
+        <label class="fld">Model <input x-model="newItem.model" placeholder="Evo" /></label>
+      </div>
+      <div class="grid cols-2">
+        <label class="fld">Year <input type="number" x-model="newItem.year" /></label>
+        <label class="fld">Condition <select x-model="newItem.cond"><option>new</option><option>good</option><option>worn</option><option>damaged</option></select></label>
+      </div>
+      <label class="fld">Location <input x-model="newItem.loc" placeholder="Rack A1" /></label>
+    </div>
+    <div class="ft"><button class="btn" @click="showAdd=false">Cancel</button><button class="btn primary" @click="addItem()">Add to storage</button></div>
+  </div>
+</div>
+
+<!-- Client detail modal -->
+<div class="overlay" x-show="detail" @click.self="detail=null" style="display:none" :style="detail?'display:flex':'display:none'">
+  <div class="modal" x-show="detail">
+    <div class="hd" x-text="detail? detail.name : ''"></div>
+    <div class="bd" x-show="detail">
+      <div class="grid cols-2">
+        <div><div class="muted small">Discipline</div><div x-text="detail?.discipline"></div></div>
+        <div><div class="muted small">Level</div><div x-text="detail?.level"></div></div>
+        <div><div class="muted small">Weight</div><div x-text="detail?.weight+' kg'"></div></div>
+        <div><div class="muted small">Country</div><div x-text="detail?.country"></div></div>
+        <div><div class="muted small">Email</div><div class="small" x-text="detail?.email"></div></div>
+        <div><div class="muted small">Phone</div><div class="small" x-text="detail?.phone"></div></div>
+      </div>
+      <div class="banner" style="margin:0" x-show="detail">
+        💡 Suggested size for today's <b x-text="' '+db.conditions.wind_kt+' kt'"></b>:
+        <b x-show="detail?.discipline==='Kite'" x-text="' ~'+Math.round(2.2*(detail?.weight||75)/db.conditions.wind_kt)+' m² kite'"></b>
+        <b x-show="detail?.discipline==='Wing'" x-text="' ~'+(Math.round(((detail?.weight||75)/13)*2)/2)+' m² wing'"></b>
+      </div>
+      <div><div class="muted small">Waiver</div><span class="badge" :class="detail?.waiver?'green':'red'" x-text="detail?.waiver?'signed':'pending — block check-out'"></span></div>
+      <div><div class="muted small">Notes</div><div x-text="detail?.note"></div></div>
+    </div>
+    <div class="ft"><button class="btn" @click="detail=null">Close</button></div>
+  </div>
+</div>
+
+<style>[x-cloak]{display:none!important}</style>
+</body>
+</html>
