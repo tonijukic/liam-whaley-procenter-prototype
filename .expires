@@ -1,0 +1,5 @@
+2026-11-01
+# Javna objava tega prototipa (GitHub Pages) je ZAVESTNA izjema od 48h pravila.
+# Toni je 2026-10-01 odobril 1 mesec javne dostopnosti.
+# Ob poteku: repo nastavi na private ALI izklopi GitHub Pages, da link neha delovati.
+#   gh repo edit tonijukic/liam-whaley-procenter-prototype --visibility private --accept-visibility-change-consequences
