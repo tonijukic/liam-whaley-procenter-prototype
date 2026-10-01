@@ -47,6 +47,9 @@ body {
 .nav .spacer { flex: 1; }
 .sidebar .foot { padding: 14px 18px; font-size: 11px; color: #7b7f88; border-top: 1px solid rgba(255,255,255,.08); }
 
+/* Mobile module bar — hidden on desktop, shown on phones (see @media 720px) */
+.mnav { display: none; }
+
 .main { flex: 1; min-width: 0; }
 .topbar {
   display: flex; align-items: center; gap: 16px; padding: 16px 28px;
@@ -71,7 +74,43 @@ body {
 .cols-3 { grid-template-columns: repeat(3, 1fr); }
 .cols-2 { grid-template-columns: repeat(2, 1fr); }
 @media (max-width: 1100px){ .cols-4{grid-template-columns:repeat(2,1fr)} .cols-3{grid-template-columns:repeat(2,1fr)} }
-@media (max-width: 720px){ .cols-4,.cols-3,.cols-2{grid-template-columns:1fr} .sidebar{display:none} }
+@media (max-width: 720px){
+  /* KPIs stay 2-up for a tidy overview; wider card pairs stack */
+  .cols-4 { grid-template-columns: 1fr 1fr; }
+  .cols-3, .cols-2 { grid-template-columns: 1fr; }
+
+  /* Swap the dark sidebar for a sticky, swipeable module bar */
+  .sidebar { display: none; }
+  .topbar { position: static; padding: 12px 14px; gap: 10px; flex-wrap: wrap; }
+  .topbar h1 { font-size: 18px; }
+  .topbar .chip { display: none; }
+  .wind { padding: 6px 10px; font-size: 12px; gap: 8px; }
+  .wind b { font-size: 14px; }
+
+  .mnav {
+    display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    padding: 9px 12px; background: var(--ink);
+    position: sticky; top: 0; z-index: 30; scrollbar-width: none;
+  }
+  .mnav::-webkit-scrollbar { display: none; }
+  .mnav a {
+    flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+    padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 600;
+    color: #cfd2d8; background: rgba(255,255,255,.08); text-decoration: none; cursor: pointer;
+  }
+  .mnav a.active { background: var(--cyan); color: #06373a; }
+  .mnav .ico { font-size: 14px; }
+
+  /* Give content room above the nav and let wide tables scroll instead of crushing */
+  .content { padding: 16px 14px 90px; }
+  .card .bd { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .content table { min-width: 560px; }
+  .sched table { min-width: 720px; }
+  .kpi { padding: 14px; }
+  .kpi .val { font-size: 24px; }
+  .water-count { flex-wrap: wrap; gap: 14px; }
+  .toolbar input, .toolbar select { flex: 1 1 auto; min-width: 0; }
+}
 
 .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
 .card .hd { padding: 16px 18px; border-bottom: 1px solid var(--line); font-weight: 700; display:flex; align-items:center; gap:8px; }

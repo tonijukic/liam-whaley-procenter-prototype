@@ -51,6 +51,18 @@
       <div class="chip" x-text="'Demo time '+now"></div>
     </div>
 
+    <!-- Mobile module bar (phones only — the sidebar is hidden there) -->
+    <nav class="mnav">
+      <a :class="{active: view==='dashboard'}" @click="view='dashboard'"><span class="ico">📊</span> Dashboard</a>
+      <a :class="{active: view==='schedule'}" @click="view='schedule'"><span class="ico">🗓️</span> Schedule</a>
+      <a :class="{active: view==='water'}" @click="view='water'"><span class="ico">🌊</span> On the Water <span class="badge cyan" x-show="onWater.length" x-text="onWater.length"></span></a>
+      <a :class="{active: view==='clients'}" @click="view='clients'"><span class="ico">👥</span> Clients</a>
+      <a :class="{active: view==='staff'}" @click="view='staff'"><span class="ico">🧑‍🏫</span> Staff</a>
+      <a :class="{active: view==='inventory'}" @click="view='inventory'"><span class="ico">📦</span> Inventory</a>
+      <a :class="{active: view==='reports'}" @click="view='reports'"><span class="ico">📈</span> Reports</a>
+      <a href="booking.html" target="_blank"><span class="ico">🔗</span> Booking ↗</a>
+    </nav>
+
     <div class="content">
 
     <!-- ============ DASHBOARD ============ -->
